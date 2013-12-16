@@ -9,7 +9,7 @@ public class Anim
 	public string animName;
 	
 	//Frame information
-	public int imgNum, startFrame, animFrames, frameRate;
+	public int sheetNum, startFrame, animFrames, frameRate;
 	
 	//Loop?
 	public bool loop;
@@ -41,8 +41,10 @@ public class SpriteAnimation : MonoBehaviour
 	
 	public SpriteSheet[] spriteSheets;
 	public Anim[] animations;
-	
+
+	[HideInInspector]
 	public SpriteSheet currentSheet;
+	[HideInInspector]
 	public Anim currentAnim;
 	
 	// Use this for initialization
@@ -54,7 +56,7 @@ public class SpriteAnimation : MonoBehaviour
 		currentAnim = animations[startAnim];
 		
 		//
-		currentSheet = spriteSheets[currentAnim.imgNum];
+		currentSheet = spriteSheets[currentAnim.sheetNum];
 		
 		currentFrame = currentAnim.startFrame;
 		
@@ -63,7 +65,7 @@ public class SpriteAnimation : MonoBehaviour
 		
 		//Assign sprite, find width/height of frames, set sprite scale
 		FrameData();
-				
+		
 		//Set the texture offset to be friendly with our frames
 		float offsetX = (frameWidth * (currentFrame % currentSheet.framesPerRow));
 		float offsetY = (frameHeight*(rowNumber-1))+(currentFrame/currentSheet.framesPerRow * frameHeight);
@@ -139,7 +141,7 @@ public class SpriteAnimation : MonoBehaviour
 	{
 		play = true;
 	}
-
+	
 	public void Pause()
 	{
 		play = false;
@@ -183,7 +185,7 @@ public class SpriteAnimation : MonoBehaviour
 	public void ChangeSheet()
 	{
 		//Change sheet
-		currentSheet = spriteSheets[currentAnim.imgNum];
+		currentSheet = spriteSheets[currentAnim.sheetNum];
 		
 		//Find frame data for new spritesheet
 		FrameData();
