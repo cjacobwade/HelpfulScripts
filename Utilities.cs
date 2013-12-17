@@ -31,7 +31,7 @@ public static class Utilities
     }
     #endregion
 	
-	#region Increment Position Properties
+    #region Increment Position Properties
     public static void AddPosX(this Transform t, float newX)
     {
         t.position = new Vector3(t.position.x + newX, t.position.y, t.position.z);
@@ -65,9 +65,9 @@ public static class Utilities
     }
     #endregion
 	
-	#region Increment Rotation
+    #region Increment Rotation
 	
-	public static void AddRot(this Transform t, Vector3 axis)
+    public static void AddRot(this Transform t, Vector3 axis)
     {
         t.rotation *= Quaternion.Euler(axis);
     }
@@ -102,5 +102,27 @@ public static class Utilities
         
         t.LookAt(lookPos);
     }
+    #endregion
+    
+    #region ChangeSpace
+    public static Vector3 WorldToView(this Vector3 vec)
+	{
+		return Camera.current.WorldToViewportPoint(vec);
+	}
+	
+	public static Vector3 WorldToScreen(this Vector3 vec)
+	{
+		return Camera.current.WorldToScreenPoint(vec);
+	}
+	
+	public static Vector3 ViewToWorld(this Vector3 vec)
+	{
+		return Camera.current.ViewportToWorldPoint(vec);
+	}
+	
+	public static Vector3 ViewToScreen(this Vector3 vec)
+	{
+		return Camera.current.ViewportToScreenPoint(vec);
+	}
     #endregion
 }
