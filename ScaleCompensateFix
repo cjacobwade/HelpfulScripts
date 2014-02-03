@@ -1,0 +1,9 @@
+// Collin and C Wade code for fixing joints for unity
+
+string $args1[] = `ls -sl`;
+int $size2 = size($args1);
+print $size2;
+
+for ($i=0;$i<$size2;$i++) {
+    setAttr ($args1[$i] + ".segmentScaleCompensate") 0;
+};
