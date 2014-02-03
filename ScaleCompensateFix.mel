@@ -7,3 +7,4 @@ print $size2;
 for ($i=0;$i<$size2;$i++) {
     setAttr ($args1[$i] + ".segmentScaleCompensate") 0;
 };
+ 
