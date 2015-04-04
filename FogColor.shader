@@ -5,6 +5,7 @@ Shader "Custom/FogColor"
 		_Color ("Color", Color) = (1,1,1,1)
 		_FogColor ("Fog Color", Color) = (1,1,1,1)
 		_MainTex ("Albedo (RGB)", 2D) = "white" {}
+		_FogTex ("Fog Tex (RGB)", 2D) = "white" {}
 	}
 	SubShader 
 	{
@@ -42,15 +43,20 @@ Shader "Custom/FogColor"
                 return o;
             }
 
-			fixed4 _FogColor;
-			sampler2D _MainTex;
+		fixed4 _FogColor;
+		sampler2D _MainTex;
+		sampler2D _FogTex;
 			
             fixed4 frag (v2f i) : SV_Target
             {
-            	float4 c = float4( i.color, 1 );
+            	// Surface color before fog:
+            	//float4 c = float4( i.color, 1 ); // this shows surface normal
+            	float4 c = tex2D( _MainTex, i.uv); //this shows texture
+            //	float4 c = float4( 1, 1, 1, 1 ); // this shows white
             
-            	//float4 fogColor = tex2D(_MainTex, i.screenPos.xy/i.screenPos.w); // fades to a screenspace texture
-            	float4 fogColor = tex2D(_MainTex, i.uv); // fades to a different model texture
+            	// Fog Color
+            	//float4 fogColor = tex2D(_FogTex, i.screenPos.xy/i.screenPos.w); // fades to a screenspace texture
+            	float4 fogColor = tex2D(_FogTex, i.uv); // fades to a different model texture
             	//float4 fogColor = _FogColor; //switch to this for a color specified on this material
             
             	UNITY_APPLY_FOG_COLOR(i.fogCoord, c, fogColor);
