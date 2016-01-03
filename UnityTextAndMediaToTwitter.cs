@@ -90,16 +90,16 @@ namespace ImageToTwitter
 		public delegate void PostTweetCallback(bool success);
 
 		private static string GetHeaderWithAccessToken(string httpRequestType, string apiURL, string consumerKey, string consumerSecret, string accessToken, string accessTokenSecret, Dictionary<string, string> parameters)
-	    {
-	        AddDefaultOAuthParams(parameters, consumerKey, consumerSecret);
+		{
+			AddDefaultOAuthParams(parameters, consumerKey, consumerSecret);
 
-	        parameters.Add("oauth_token", accessToken);
-	        parameters.Add("oauth_token_secret", accessTokenSecret);
+			parameters.Add("oauth_token", accessToken);
+			parameters.Add("oauth_token_secret", accessTokenSecret);
 
-	        return GetFinalOAuthHeader(httpRequestType, apiURL, parameters);
-	    }
+			return GetFinalOAuthHeader(httpRequestType, apiURL, parameters);
+		}
 
-	    #region Twitter API Methods
+		#region Twitter API Methods
 
 		private const string UploadMediaURL = "https://upload.twitter.com/1.1/media/upload.json";
 		private const string PostTweetURL = "https://api.twitter.com/1.1/statuses/update.json";
@@ -151,46 +151,46 @@ namespace ImageToTwitter
 		}
 
 		public static IEnumerator PostImageTweet(byte[] imageInBytes, string consumerKey, string consumerSecret, string accessToken, string accessTokenSecret, Action<bool> callback)
-	    {
+		{
 			if (imageInBytes.Length == 0)
-	        {
-	            callback(false);
-	        }
-	        else
-	        {
-	            Dictionary<string, string> parameters = new Dictionary<string, string>();
+			{
+				callback(false);
+			}
+			else
+			{
+				Dictionary<string, string> parameters = new Dictionary<string, string>();
 				string encoded64ImageData = System.Convert.ToBase64String(imageInBytes);
 				parameters.Add("media_data", encoded64ImageData );
 
-	            // Add data to the form to post.
-	            WWWForm form = new WWWForm();
+				// Add data to the form to post.
+				WWWForm form = new WWWForm();
 				form.AddField("media_data", encoded64ImageData);
 
-	            // HTTP header
+				// HTTP header
 				var headers = new Dictionary<string, string>();
 				headers["Authorization"] = GetHeaderWithAccessToken("POST", UploadMediaURL, consumerKey, consumerSecret, accessToken, accessTokenSecret, parameters);
 				headers["Content-Transfer-Encoding"] = "base64";
 
 				WWW web = new WWW(UploadMediaURL, form.data, headers);
-	            yield return web;
+				yield return web;
 
-	            if (!string.IsNullOrEmpty(web.error))
-	            {
+				if (!string.IsNullOrEmpty(web.error))
+				{
 					Debug.Log(string.Format("PostTweet - failed. {0}\n{1}", web.error, web.text));
 					callback(false);
-	            }
-	            else
-	            {
-	                string error = Regex.Match(web.text, @"<error>([^&]+)</error>").Groups[1].Value;
+				}
+				else
+				{
+					string error = Regex.Match(web.text, @"<error>([^&]+)</error>").Groups[1].Value;
 
-	                if (!string.IsNullOrEmpty(error))
-	                {
-	                    Debug.Log(string.Format("PostTweet - failed. {0}", error));
-	                    callback(false);
-	                }
-	                else
-	                {
-	                    callback(true);
+					if (!string.IsNullOrEmpty(error))
+					{
+						Debug.Log(string.Format("PostTweet - failed. {0}", error));
+						callback(false);
+					}
+					else
+					{
+						callback(true);
 
 						// NOW THAT MEDIA IS UPLOADED, TWEET WITH THE ASSOCIATED MEDIA ID
 						string parsedMediaID = web.text.Substring(12,18);
@@ -326,139 +326,139 @@ namespace ImageToTwitter
 		}
 		#endregion
 
-	    #region OAuth Help Methods
-	    private static readonly string[] OAuthParametersToIncludeInHeader = new[]
-	                                                      {
-	                                                          "oauth_version",
-	                                                          "oauth_nonce",
-	                                                          "oauth_timestamp",
-	                                                          "oauth_signature_method",
-	                                                          "oauth_consumer_key",
-	                                                          "oauth_token",
-	                                                          "oauth_verifier"
-	                                                          // Leave signature omitted from the list, it is added manually
-	                                                          // "oauth_signature",
-	                                                      };
+		#region OAuth Help Methods
+		private static readonly string[] OAuthParametersToIncludeInHeader = new[]
+														{
+															"oauth_version",
+															"oauth_nonce",
+															"oauth_timestamp",
+															"oauth_signature_method",
+															"oauth_consumer_key",
+															"oauth_token",
+															"oauth_verifier"
+															// Leave signature omitted from the list, it is added manually
+															// "oauth_signature",
+														};
 
-	    private static readonly string[] SecretParameters = new[]
-	                                                            {
-	                                                                "oauth_consumer_secret",
-	                                                                "oauth_token_secret",
-	                                                                "oauth_signature"
-	                                                            };
+		private static readonly string[] SecretParameters = new[]
+																{
+																	"oauth_consumer_secret",
+																	"oauth_token_secret",
+																	"oauth_signature"
+																};
 
-	    private static void AddDefaultOAuthParams(Dictionary<string, string> parameters, string consumerKey, string consumerSecret)
-	    {
-	        parameters.Add("oauth_version", "1.0");
-	        parameters.Add("oauth_nonce", GenerateNonce());
-	        parameters.Add("oauth_timestamp", GenerateTimeStamp());
-	        parameters.Add("oauth_signature_method", "HMAC-SHA1");
-	        parameters.Add("oauth_consumer_key", consumerKey);
-	        parameters.Add("oauth_consumer_secret", consumerSecret);
-	    }
+		private static void AddDefaultOAuthParams(Dictionary<string, string> parameters, string consumerKey, string consumerSecret)
+		{
+			parameters.Add("oauth_version", "1.0");
+			parameters.Add("oauth_nonce", GenerateNonce());
+			parameters.Add("oauth_timestamp", GenerateTimeStamp());
+			parameters.Add("oauth_signature_method", "HMAC-SHA1");
+			parameters.Add("oauth_consumer_key", consumerKey);
+			parameters.Add("oauth_consumer_secret", consumerSecret);
+		}
 
-	    private static string GetFinalOAuthHeader(string HTTPRequestType, string URL, Dictionary<string, string> parameters)
-	    {
-	        // Add the signature to the oauth parameters
-	        string signature = GenerateSignature(HTTPRequestType, URL, parameters);
+		private static string GetFinalOAuthHeader(string HTTPRequestType, string URL, Dictionary<string, string> parameters)
+		{
+			// Add the signature to the oauth parameters
+			string signature = GenerateSignature(HTTPRequestType, URL, parameters);
 
-	        parameters.Add("oauth_signature", signature);
+			parameters.Add("oauth_signature", signature);
 
-	        StringBuilder authHeaderBuilder = new StringBuilder();
-	        authHeaderBuilder.AppendFormat("OAuth realm=\"{0}\"", "Twitter API");
+			StringBuilder authHeaderBuilder = new StringBuilder();
+			authHeaderBuilder.AppendFormat("OAuth realm=\"{0}\"", "Twitter API");
 
-	        var sortedParameters = from p in parameters
-	                               where OAuthParametersToIncludeInHeader.Contains(p.Key)
-	                               orderby p.Key, UrlEncode(p.Value)
-	                               select p;
+			var sortedParameters = from p in parameters
+									where OAuthParametersToIncludeInHeader.Contains(p.Key)
+									orderby p.Key, UrlEncode(p.Value)
+									select p;
 
-	        foreach (var item in sortedParameters)
-	        {
-	            authHeaderBuilder.AppendFormat(",{0}=\"{1}\"", UrlEncode(item.Key), UrlEncode(item.Value));
-	        }
+			foreach (var item in sortedParameters)
+			{
+			authHeaderBuilder.AppendFormat(",{0}=\"{1}\"", UrlEncode(item.Key), UrlEncode(item.Value));
+			}
 
-	        authHeaderBuilder.AppendFormat(",oauth_signature=\"{0}\"", UrlEncode(parameters["oauth_signature"]));
+			authHeaderBuilder.AppendFormat(",oauth_signature=\"{0}\"", UrlEncode(parameters["oauth_signature"]));
 
-	        return authHeaderBuilder.ToString();
-	    }
+			return authHeaderBuilder.ToString();
+		}
 
-	    private static string GenerateSignature(string httpMethod, string url, Dictionary<string, string> parameters)
-	    {
-	        var nonSecretParameters = (from p in parameters
-	                                   where !SecretParameters.Contains(p.Key)
-	                                   select p);
+		private static string GenerateSignature(string httpMethod, string url, Dictionary<string, string> parameters)
+		{
+			var nonSecretParameters = (from p in parameters
+										where !SecretParameters.Contains(p.Key)
+										select p);
 
-	        // Create the base string. This is the string that will be hashed for the signature.
-	        string signatureBaseString = string.Format(CultureInfo.InvariantCulture,
-	                                                   "{0}&{1}&{2}",
-	                                                   httpMethod,
-	                                                   UrlEncode(NormalizeUrl(new Uri(url))),
-	                                                   UrlEncode(nonSecretParameters));
+			// Create the base string. This is the string that will be hashed for the signature.
+			string signatureBaseString = string.Format(CultureInfo.InvariantCulture,
+														"{0}&{1}&{2}",
+														httpMethod,
+														UrlEncode(NormalizeUrl(new Uri(url))),
+														UrlEncode(nonSecretParameters));
 
-	        // Create our hash key (you might say this is a password)
-	        string key = string.Format(CultureInfo.InvariantCulture,
-	                                   "{0}&{1}",
-	                                   UrlEncode(parameters["oauth_consumer_secret"]),
-	                                   parameters.ContainsKey("oauth_token_secret") ? UrlEncode(parameters["oauth_token_secret"]) : string.Empty);
+			// Create our hash key (you might say this is a password)
+			string key = string.Format(CultureInfo.InvariantCulture,
+										"{0}&{1}",
+										UrlEncode(parameters["oauth_consumer_secret"]),
+										parameters.ContainsKey("oauth_token_secret") ? UrlEncode(parameters["oauth_token_secret"]) : string.Empty);
 
 
-	        // Generate the hash
-	        HMACSHA1 hmacsha1 = new HMACSHA1(Encoding.ASCII.GetBytes(key));
-	        byte[] signatureBytes = hmacsha1.ComputeHash(Encoding.ASCII.GetBytes(signatureBaseString));
-	        return Convert.ToBase64String(signatureBytes);
-	    }
+			// Generate the hash
+			HMACSHA1 hmacsha1 = new HMACSHA1(Encoding.ASCII.GetBytes(key));
+			byte[] signatureBytes = hmacsha1.ComputeHash(Encoding.ASCII.GetBytes(signatureBaseString));
+			return Convert.ToBase64String(signatureBytes);
+		}
 
-	    private static string GenerateTimeStamp()
-	    {
-	        // Default implementation of UNIX time of the current UTC time
-	        TimeSpan ts = DateTime.UtcNow - new DateTime(1970, 1, 1, 0, 0, 0, 0);
-	        return Convert.ToInt64(ts.TotalSeconds, CultureInfo.CurrentCulture).ToString(CultureInfo.CurrentCulture);
-	    }
+		private static string GenerateTimeStamp()
+		{
+			// Default implementation of UNIX time of the current UTC time
+			TimeSpan ts = DateTime.UtcNow - new DateTime(1970, 1, 1, 0, 0, 0, 0);
+			return Convert.ToInt64(ts.TotalSeconds, CultureInfo.CurrentCulture).ToString(CultureInfo.CurrentCulture);
+		}
 
-	    private static string GenerateNonce()
-	    {
-	        // Just a simple implementation of a random number between 123400 and 9999999
-	        return new System.Random().Next(123400, int.MaxValue).ToString("X", CultureInfo.InvariantCulture);
-	    }
+		private static string GenerateNonce()
+		{
+			// Just a simple implementation of a random number between 123400 and 9999999
+			return new System.Random().Next(123400, int.MaxValue).ToString("X", CultureInfo.InvariantCulture);
+		}
 
-	    private static string NormalizeUrl(Uri url)
-	    {
-	        string normalizedUrl = string.Format(CultureInfo.InvariantCulture, "{0}://{1}", url.Scheme, url.Host);
-	        if (!((url.Scheme == "http" && url.Port == 80) || (url.Scheme == "https" && url.Port == 443)))
-	        {
-	            normalizedUrl += ":" + url.Port;
-	        }
+		private static string NormalizeUrl(Uri url)
+		{
+			string normalizedUrl = string.Format(CultureInfo.InvariantCulture, "{0}://{1}", url.Scheme, url.Host);
+			if (!((url.Scheme == "http" && url.Port == 80) || (url.Scheme == "https" && url.Port == 443)))
+			{
+				normalizedUrl += ":" + url.Port;
+			}
 
-	        normalizedUrl += url.AbsolutePath;
-	        return normalizedUrl;
-	    }
+			normalizedUrl += url.AbsolutePath;
+			return normalizedUrl;
+		}
 
-	    private static string UrlEncode(string value)
-	    {
-	        if (string.IsNullOrEmpty(value))
-	        {
-	            return string.Empty;
-	        }
+		private static string UrlEncode(string value)
+		{
+			if (string.IsNullOrEmpty(value))
+			{
+				return string.Empty;
+			}
 
 			value = BigEscapeString(value);
 
-	        // UrlEncode escapes with lowercase characters (e.g. %2f) but oAuth needs %2F
-	        value = Regex.Replace(value, "(%[0-9a-f][0-9a-f])", c => c.Value.ToUpper());
+			// UrlEncode escapes with lowercase characters (e.g. %2f) but oAuth needs %2F
+			value = Regex.Replace(value, "(%[0-9a-f][0-9a-f])", c => c.Value.ToUpper());
 
-	        // these characters are not escaped by UrlEncode() but needed to be escaped
-	        value = value
-	            .Replace("(", "%28")
-	            .Replace(")", "%29")
-	            .Replace("$", "%24")
-	            .Replace("!", "%21")
-	            .Replace("*", "%2A")
-	            .Replace("'", "%27");
+			// these characters are not escaped by UrlEncode() but needed to be escaped
+			value = value
+				.Replace("(", "%28")
+				.Replace(")", "%29")
+				.Replace("$", "%24")
+				.Replace("!", "%21")
+				.Replace("*", "%2A")
+				.Replace("'", "%27");
 
-	        // these characters are escaped by UrlEncode() but will fail if unescaped!
-	        value = value.Replace("%7E", "~");
+			// these characters are escaped by UrlEncode() but will fail if unescaped!
+			value = value.Replace("%7E", "~");
 
-	        return value;
-	    }
+			return value;
+		}
 
 		private static string BigEscapeString(string originalString)
 		{
@@ -481,32 +481,32 @@ namespace ImageToTwitter
 			return sb.ToString();
 		}
 
-	    private static string UrlEncode(IEnumerable<KeyValuePair<string, string>> parameters)
-	    {
-	        StringBuilder parameterString = new StringBuilder();
+		private static string UrlEncode(IEnumerable<KeyValuePair<string, string>> parameters)
+		{
+			StringBuilder parameterString = new StringBuilder();
 
-	        var paramsSorted = from p in parameters
-	                           orderby p.Key, p.Value
-	                           select p;
+			var paramsSorted = from p in parameters
+								orderby p.Key, p.Value
+								select p;
 
-	        foreach (var item in paramsSorted)
-	        {
-	            if (parameterString.Length > 0)
-	            {
-	                parameterString.Append("&");
-	            }
+			foreach (var item in paramsSorted)
+			{
+				if (parameterString.Length > 0)
+				{
+					parameterString.Append("&");
+				}
 
-	            parameterString.Append(
-	                string.Format(
-	                    CultureInfo.InvariantCulture,
-	                    "{0}={1}",
-	                    UrlEncode(item.Key),
-	                    UrlEncode(item.Value)));
-	        }
+				parameterString.Append(
+					string.Format(
+						CultureInfo.InvariantCulture,
+						"{0}={1}",
+						UrlEncode(item.Key),
+						UrlEncode(item.Value)));
+			}
 
-	        return UrlEncode(parameterString.ToString());
-	    }
+			return UrlEncode(parameterString.ToString());
+		}
 
-	    #endregion
+		#endregion
 	}
 }
