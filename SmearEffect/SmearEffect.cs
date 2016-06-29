@@ -2,7 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 
-public class SmearEffect : Monobehaviour
+public class SmearEffect : MonoBehaviour
 {
 	Queue<Vector3> _recentPositions = new Queue<Vector3>();
 
