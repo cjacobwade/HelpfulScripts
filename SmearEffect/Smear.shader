@@ -72,7 +72,7 @@
 			float dirDot = dot(normalize(worldOffset), normalize(localOffset));
 			fixed3 unitVec = fixed3(1, 1, 1) * _NoiseHeight;
 			worldOffset = clamp(worldOffset, unitVec * -1, unitVec);
-			worldOffset *= -clamp(sign(dirDot), -1, 0) * lerp(1, 0, step(length(worldOffset), 0));
+			worldOffset *= -clamp(dirDot, -1, 0) * lerp(1, 0, step(length(worldOffset), 0));
 	
 			fixed3 smearOffset = -worldOffset.xyz * lerp(1, noise(worldPos * _NoiseScale), step(0, _NoiseScale));
 			worldPos.xyz += smearOffset;
