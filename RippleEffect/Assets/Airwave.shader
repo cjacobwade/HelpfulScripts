@@ -16,6 +16,8 @@
 		GrabPass { "_BackgroundTexture"}
 
 		Blend SrcAlpha OneMinusSrcAlpha
+		
+		Zwrite Off
 
 		// Render the object with the texture generated above, and invert the colors
 		Pass
