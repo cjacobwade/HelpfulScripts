@@ -1,10 +1,11 @@
-﻿Shader "Particle/Airwave"
+Shader "Custom/Airwave"
 {
 	Properties
 	{
 		_TintColor("Color", Color) = (1, 1, 1, 1)
 		_WaveNormal("Wave Normal", 2D) = "white" {}
 		_WaveStrength("Wave Strength", Float) = 1
+		_InvFade("Soft Particles Factor", Range(0, 3)) = 1
 	}
 
 	SubShader
@@ -16,7 +17,6 @@
 		GrabPass { "_BackgroundTexture"}
 
 		Blend SrcAlpha OneMinusSrcAlpha
-		
 		Zwrite Off
 
 		// Render the object with the texture generated above, and invert the colors
@@ -25,6 +25,8 @@
 			CGPROGRAM
 			#pragma vertex vert
 			#pragma fragment frag
+			#pragma multi_compile_particles
+
 			#include "UnityCG.cginc"
 
 			sampler2D _BackgroundTexture;
@@ -57,7 +59,7 @@
 				o.pos = mul(UNITY_MATRIX_MVP, v.vertex);
 
 #ifdef SOFTPARTICLES_ON
-				o.projPos = ComputeScreenPos(o.vertex);
+				o.projPos = ComputeScreenPos(o.pos);
 				COMPUTE_EYEDEPTH(o.projPos.z);
 #endif
 
