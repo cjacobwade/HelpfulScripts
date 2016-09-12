@@ -87,7 +87,7 @@ Shader "Custom/Airwave"
 
 				i.grabPos.xy += wave.xy / wave.z * _WaveStrength * i.color.a;
 				half4 bgcolor = tex2Dproj(_BackgroundTexture, i.grabPos);
-				return bgcolor;
+				return bgcolor * _TintColor;
 			}
 			ENDCG
 		}
