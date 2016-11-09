@@ -45,7 +45,7 @@ public static class CopyFromBaseType
 			}
 
 			type = type.BaseType;
-			if (type == typeof(MonoBehaviour))
+			if (type == typeof(UnityEngine.Component))
 				break;
 		}
 
