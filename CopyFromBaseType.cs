@@ -10,15 +10,17 @@ public static class CopyFromBaseType
 	static bool ValidateCopyFromInheritedType(MenuCommand menuCommand)
 	{
 		var clickedComponent = menuCommand.context as Component;
-
-		UnityEngine.Component[] components = clickedComponent.gameObject.GetComponents(typeof(MonoBehaviour));
-		UnityEditorInternal.ComponentUtility.PasteComponentAsNew(clickedComponent.gameObject);
-		var tempPasteComponent = clickedComponent.gameObject.GetComponents(typeof(MonoBehaviour)).Where(c => !components.Contains(c)).FirstOrDefault();
-		if (tempPasteComponent)
+		if(clickedComponent)
 		{
-			Type type = tempPasteComponent.GetType();
-			UnityEngine.Component.DestroyImmediate(tempPasteComponent);
-			return clickedComponent.GetType().IsSubclassOf(type);
+			UnityEngine.Component[] components = clickedComponent.gameObject.GetComponents(typeof(MonoBehaviour));
+			UnityEditorInternal.ComponentUtility.PasteComponentAsNew(clickedComponent.gameObject);
+			var tempPasteComponent = clickedComponent.gameObject.GetComponents(typeof(MonoBehaviour)).Where(c => !components.Contains(c)).FirstOrDefault();
+			if (tempPasteComponent)
+			{
+				Type type = tempPasteComponent.GetType();
+				UnityEngine.Component.DestroyImmediate(tempPasteComponent);
+				return clickedComponent.GetType().IsSubclassOf(type);
+			}
 		}
 
 		return false;
