@@ -2,6 +2,8 @@
 using System.Collections;
 using System.Collections.Generic;
 
+// In addition to this rigidbody, you'll also need some type of collider set to trigger
+[RequireComponent(typeof(Rigidbody))]
 public class Sensor<T> : MonoBehaviour where T : MonoBehaviour
 {
 	// We cache colliders of sensed objects so we can skip getcomponents on things we've already hit
@@ -22,12 +24,8 @@ public class Sensor<T> : MonoBehaviour where T : MonoBehaviour
 	}
 
 	// Subscribe to these callbacks to be notified when something is sensed/unsensed
-	public System.Action<T> SensedCallback = delegate
-	{
-	};
-	public System.Action<T> UnsensedCallback = delegate
-	{
-	};
+	public System.Action<T> SensedCallback = delegate{};
+	public System.Action<T> UnsensedCallback = delegate{};
 
 	void OnTriggerEnter(Collider collider)
 	{
