@@ -6,12 +6,11 @@ using System.Linq;
 
 public class PrefabUtils
 {
-  [MenuItem("Utilities/Prefabs/Revert All Selected", true)]
+	[MenuItem("Utilities/Prefabs/Revert All Selected", true)]
 	static bool ValidateRevertSelectedPrefabs()
 	{
 		return Selection.gameObjects.Count(g => PrefabUtility.GetPrefabParent(g)) > 0;
 	}
-	#endregion
 
 	[MenuItem("Utilities/Prefabs/Revert All Selected")]
 	static void RevertSelectedPrefabs()
