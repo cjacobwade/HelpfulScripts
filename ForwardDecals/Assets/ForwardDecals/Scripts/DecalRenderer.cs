@@ -15,6 +15,25 @@ public class DecalRenderer : MonoBehaviour
 
 	Dictionary<Camera, CommandBuffer> _cameras = new Dictionary<Camera, CommandBuffer>();
 
+	void Awake()
+	{
+		Camera attachedCam = GetComponent<Camera>();
+		if(attachedCam)
+		{
+			if(attachedCam.depthTextureMode != DepthTextureMode.DepthNormals)
+				attachedCam.depthTextureMode = DepthTextureMode.DepthNormals;
+		}
+
+#if UNITY_EDITOR
+		var sceneCams = SceneView.GetAllSceneCameras();
+		for(int i = 0; i < sceneCams.Length; i++)
+		{
+			if(sceneCams[i].depthTextureMode != DepthTextureMode.DepthNormals)
+				sceneCams[i].depthTextureMode = DepthTextureMode.DepthNormals;
+		}
+#endif
+	}
+
 	public void OnDisable()
 	{
 		foreach(var cam in _cameras)
@@ -75,6 +94,9 @@ public class DecalRenderer : MonoBehaviour
 
 		for(int i = 0; i < sceneCams.Length; i++)
 		{
+			if(sceneCams[i].depthTextureMode != DepthTextureMode.DepthNormals)
+				sceneCams[i].depthTextureMode = DepthTextureMode.DepthNormals;
+			
 			CommandBuffer sceneBuf = null;
 			if(_cameras.ContainsKey(sceneCams[i]))
 			{
