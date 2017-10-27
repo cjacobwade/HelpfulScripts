@@ -10,7 +10,7 @@ Shader "Custom/ForwardDecal"
 	}
 	SubShader
 	{
-		Tags{"RenderType" = "Transparent" "Queue" = "Transparent+10"}
+		Tags{"RenderType" = "Transparent" "Queue" = "Transparent" "DisableBatching"="True"}
 		LOD 200
 
 		ZWrite Off
@@ -92,13 +92,13 @@ Shader "Custom/ForwardDecal"
 
 				clip(float3(0.5, 0.5, 0.5) - abs(opos.xyz)); // Clip any fragments outside our box
 
-															 // Next we want to clip any surfaces not facing us
+				// Next we want to clip any surfaces not facing us
 				float4 dn = tex2D(_CameraDepthNormalsTexture, screenUV);
 				float3 normal = DecodeViewNormalStereo(dn) * float3(1, 1, -1);
 				float3 worldN = mul((half3x3)unity_CameraToWorld, normal); // Transform normals to world space
 
 				// Hack to exaggerate normal to reduce stretched surfaces
-				float3 hackWorld = normalize(worldN * 2.0 - 1.0);
+				float3 hackWorld = worldN;
 
 				float3 orientation = mul(unity_ObjectToWorld, float3(0, 1, 0)); // Transform objects up to world space
 				clip(dot(hackWorld, orientation) + 0.2); // Clip anything that's not facing mostly up
