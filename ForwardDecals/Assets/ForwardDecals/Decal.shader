@@ -43,25 +43,35 @@ Shader "Custom/ForwardDecal"
 			CGPROGRAM
 			#pragma vertex vert
 			#pragma fragment frag
+			#pragma multi_compile_instancing
 
 			#include "UnityCG.cginc"
 			#include "UnityStandardUtils.cginc"
+
+			struct appdata
+            {
+                float4 vertex : SV_POSITION;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+            };
 
 			struct v2f
 			{
 				float4 pos : SV_POSITION;
 				float4 localPos : TEXCOORD0;
 				float4 screenUV : TEXCOORD1;
+				UNITY_VERTEX_INPUT_INSTANCE_ID
 			};
 
-			v2f vert(float4 v : POSITION)
+			v2f vert(appdata v)
 			{
 				v2f o;
-				o.pos = UnityObjectToClipPos(v);
-				o.localPos = v;
+				UNITY_SETUP_INSTANCE_ID(v);
+				UNITY_TRANSFER_INSTANCE_ID(v, o);
 
-				float4 viewPos = mul(UNITY_MATRIX_MVP, v);
-				o.screenUV = ComputeScreenPos(viewPos);
+				o.pos = UnityObjectToClipPos(v.vertex);
+				o.localPos = v.vertex;
+
+				o.screenUV = ComputeScreenPos(o.pos);
 				return o;
 			}
 
@@ -78,9 +88,11 @@ Shader "Custom/ForwardDecal"
 
 			fixed4 frag(v2f i) : SV_Target
 			{
+				UNITY_SETUP_INSTANCE_ID(i);
+
 				// Get view space vector toward this fragment
 				float3 ray = mul(UNITY_MATRIX_MV, i.localPos).xyz * float3(-1, -1, 1);
-				ray = ray * (_ProjectionParams.z / ray.z); // Need to scale depth relative to camera distance and far clip for some reason
+				ray *= (_ProjectionParams.z / ray.z); // Far clip dist/viewspace distance
 
 				float2 screenUV = i.screenUV.xy / i.screenUV.w;
 				float depth = SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, screenUV);
@@ -97,11 +109,8 @@ Shader "Custom/ForwardDecal"
 				float3 normal = DecodeViewNormalStereo(dn) * float3(1, 1, -1);
 				float3 worldN = mul((half3x3)unity_CameraToWorld, normal); // Transform normals to world space
 
-				// Hack to exaggerate normal to reduce stretched surfaces
-				float3 hackWorld = worldN;
-
 				float3 orientation = mul(unity_ObjectToWorld, float3(0, 1, 0)); // Transform objects up to world space
-				clip(dot(hackWorld, orientation) + 0.2); // Clip anything that's not facing mostly up
+				clip(dot(worldN, orientation) + 0.2); // Clip anything that's not facing mostly up
 
 				float2 texUV = opos.xz + 0.5; // Treat surface projection's object space xz position as UVs (use z instead of y because we're using object's y as the projection direction)
 				fixed4 col = tex2D(_MainTex, texUV) * _Color;
