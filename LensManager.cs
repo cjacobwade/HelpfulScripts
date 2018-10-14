@@ -2,9 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System;
-using LinqTools;
 
-public class LensHandle
+public class Lens
 {
 	object _context;
 	public object GetContext()
@@ -14,19 +13,19 @@ public class LensHandle
 	public string GetName()
 	{ return _name; }
 
-	public LensHandle(object inContext)
+	protected Lens(object inContext, string name)
 	{
 		Debug.Assert(inContext != null, "Hold up. Invalid context passed to a lens handle.");
 
 		_context = inContext;
-		_name = inContext.ToString();
+		_name = string.IsNullOrEmpty(name) ? inContext.ToString() : name;
 	}
 }
 
-public class LensHandle<T> : LensHandle
+public class Lens<T> : Lens
 {
 	public T value = default(T);
-	public LensHandle(object inContext, T inValue) : base(inContext)
+	public Lens(object inContext, T inValue, string name = null) : base(inContext, name)
 	{
 		value = inValue;
 	}
@@ -50,7 +49,8 @@ public class LensManager<T>
 	{ return _requestCount; }
 
 	protected Func<List<T>, T> _evaluateFunc = null;
-	List<LensHandle<T>> _activeRequests = new List<LensHandle<T>>();
+	List<Lens<T>> _activeRequests = new List<Lens<T>>();
+	List<T> _evaluateValues = new List<T>();
 
 	public Action<T> evaluateCallback = delegate{};
 
@@ -59,65 +59,44 @@ public class LensManager<T>
 
 	public void EvaluateRequests()
 	{
+		_evaluateValues.Clear();
+
 		for (int i = 0; i < _activeRequests.Count; i++)
 		{
 			if (_activeRequests[i].GetContext() == null)
 			{
 				_activeRequests.RemoveAt(i--);
 			}
+			else
+			{
+				_evaluateValues.Add(_activeRequests[i].value);
+			}
 		}
 
 		_requestCount = _activeRequests.Count;
-		_cachedResult = _evaluateFunc(_activeRequests.Select(r => (T)r.value).ToList());
+		_cachedResult = _evaluateFunc(_evaluateValues);
 
 		evaluateCallback(_cachedResult);
 	}
 
-	public void AddRequest(LensHandle<T> inHandle)
-	{ AddRequests(inHandle); }
-
-	public void AddRequests(params LensHandle<T>[] inHandles)
-	{ AddRequestsEnumerable(inHandles); }
-
-	void AddRequestsEnumerable(IEnumerable<LensHandle<T>> inHandles)
+	public void AddRequest(Lens<T> handle)
 	{
-		Debug.Assert(inHandles != null, "Request Enumerable is null. This is not supported.");
-
-		var enumerator = inHandles.GetEnumerator();
-		while (enumerator.MoveNext())
+		if (!_activeRequests.Contains(handle))
 		{
-			var handle = enumerator.Current;
-			if (handle != null && !_activeRequests.Contains(handle))
-				_activeRequests.Add(handle);
+			_activeRequests.Add(handle);
+			EvaluateRequests();
 		}
-
-		EvaluateRequests();
 	}
 
-	public bool RemoveRequest(LensHandle<T> inHandle)
-	{ return RemoveRequests(inHandle); }
-
-	public bool RemoveRequests(params LensHandle<T>[] inHandles)
-	{ return RemoveRequestsEnumerable(inHandles); }
-
-	bool RemoveRequestsEnumerable(IEnumerable<LensHandle<T>> inHandles)
+	public bool RemoveRequest(Lens<T> handle)
 	{
-		Debug.Assert(inHandles != null, "Request Enumerable is null. This is not supported.");
-
-		bool anyRemoved = false;
-		var enumerator = inHandles.GetEnumerator();
-		while (enumerator.MoveNext())
+		if (_activeRequests.Remove(handle))
 		{
-			var handle = enumerator.Current;
-			if (_activeRequests.Contains(handle))
-			{
-				_activeRequests.Remove(handle);
-				anyRemoved = true;
-			}
+			EvaluateRequests();
+			return true;
 		}
 
-		EvaluateRequests();
-		return anyRemoved;
+		return false;
 	}
 
 	public bool RemoveRequestsWithContext(object inContext)
@@ -132,7 +111,9 @@ public class LensManager<T>
 			}
 		}
 
-		EvaluateRequests();
+		if(anyRemoved)
+			EvaluateRequests();
+
 		return anyRemoved;
 	}
 
@@ -145,60 +126,169 @@ public class LensManager<T>
 
 public static class LensUtils
 {
-	// AVERAGE
 	public static float Average(List<float> inRequests, float inDefault = 1f)
-	{ return inRequests.Count > 0 ? inRequests.Average(r => r) : inDefault; }
-
-	public static int Average(List<int> inRequests, int inDefault = 1)
-	{ return inRequests.Count > 0 ? (int)inRequests.Average(r => r) : inDefault; }
-
-	// MAX
-	public static float Max(List<float> inRequests, float inDefault = 1f)
-	{ return inRequests.Count > 0 ? inRequests.Max(r => r) : inDefault; }
-
-	public static int Max(List<int> inRequests, int inDefault = 1)
-	{ return inRequests.Count > 0 ? (int)inRequests.Max(r => r) : inDefault; }
-
-	// MIN
-	public static float Min(List<float> inRequests, float inDefault = 1f)
-	{ return inRequests.Count > 0 ? inRequests.Min(r => r) : inDefault; }
-
-	public static int Min(List<int> inRequests, int inDefault = 1)
-	{ return inRequests.Count > 0 ? (int)inRequests.Min(r => r) : inDefault; }
-
-	// BOOLS
-	public static bool AllTrue(List<bool> inRequests, bool inDefault = true)
-	{ return inRequests.Count > 0 ? inRequests.All(r => r) : inDefault; }
-
-	public static bool AllFalse(List<bool> inRequests, bool inDefault = false)
-	{ return inRequests.Count > 0 ? inRequests.All(r => !r) : inDefault; }
-
-	public static bool AnyTrue(List<bool> inRequests, bool inDefault = false)
-	{ return inRequests.Count > 0 ? inRequests.Any(r => r) : inDefault; }
-
-	public static bool AnyFalse(List<bool> inRequests, bool inDefault = true)
-	{ return inRequests.Count > 0 ? inRequests.Any(r => !r) : inDefault; }
-
-	// CUSTOM
-	public static CursorLockMode MouseCursor(List<CursorLockMode> inRequests, CursorLockMode inDefault = CursorLockMode.Locked)
 	{
 		if (inRequests.Count > 0)
 		{
-			for(int i = 0; i < inRequests.Count; i++)
-			{
-				if (inRequests[i] == CursorLockMode.None)
-					return CursorLockMode.None;
-			}
-
+			float sum = 0f;
 			for (int i = 0; i < inRequests.Count; i++)
 			{
-				if (inRequests[i] == CursorLockMode.Confined)
-					return CursorLockMode.Confined;
+				sum += inRequests[i];
 			}
-
-			return CursorLockMode.Locked;
+			return sum / inRequests.Count;
 		}
 		else
+		{
 			return inDefault;
+		}
+	}
+
+	public static int Average(List<int> inRequests, int inDefault = 1)
+	{
+		if (inRequests.Count > 0)
+		{
+			int sum = 0;
+			for (int i = 0; i < inRequests.Count; i++)
+			{
+				sum += inRequests[i];
+			}
+			return sum / inRequests.Count;
+		}
+		else
+		{
+			return inDefault;
+		}
+	}
+
+	public static float Max(List<float> inRequests, float inDefault = 1f)
+	{
+		if (inRequests.Count > 0)
+		{
+			float max = 0f;
+			for (int i = 0; i < inRequests.Count; i++)
+			{
+				max = Mathf.Max(max, inRequests[i]);
+			}
+			return max;
+		}
+		else
+		{
+			return inDefault;
+		}
+	}
+
+	public static int Max(List<int> inRequests, int inDefault = 1)
+	{
+		if (inRequests.Count > 0)
+		{
+			int max = 0;
+			for (int i = 0; i < inRequests.Count; i++)
+			{
+				max = Mathf.Max(max, inRequests[i]);
+			}
+			return max;
+		}
+		else
+		{
+			return inDefault;
+		}
+	}
+
+	public static float Min(List<float> inRequests, float inDefault = 1f)
+	{
+		if (inRequests.Count > 0)
+		{
+			float min = 0f;
+			for (int i = 0; i < inRequests.Count; i++)
+			{
+				min = Mathf.Min(min, inRequests[i]);
+			}
+			return min;
+		}
+		else
+		{
+			return inDefault;
+		}
+	}
+
+	public static int Min(List<int> inRequests, int inDefault = 1)
+	{
+		if (inRequests.Count > 0)
+		{
+			int min = 0;
+			for (int i = 0; i < inRequests.Count; i++)
+			{
+				min = Mathf.Min(min, inRequests[i]);
+			}
+			return min;
+		}
+		else
+		{
+			return inDefault;
+		}
+	}
+
+	public static bool AllTrue(List<bool> inRequests, bool inDefault = true)
+	{
+		if (inRequests.Count > 0)
+		{
+			for (int i = 0; i < inRequests.Count; i++)
+			{
+				if(!inRequests[i]) return false;
+			}
+			return true;
+		}
+		else
+		{
+			return inDefault;
+		}
+	}
+
+	public static bool AllFalse(List<bool> inRequests, bool inDefault = false)
+	{
+		if (inRequests.Count > 0)
+		{
+			for (int i = 0; i < inRequests.Count; i++)
+			{
+				if (inRequests[i]) return false;
+			}
+			return true;
+		}
+		else
+		{
+			return inDefault;
+		}
+	}
+
+	public static bool AnyTrue(List<bool> inRequests, bool inDefault = false)
+	{
+		if (inRequests.Count > 0)
+		{
+			for (int i = 0; i < inRequests.Count; i++)
+			{
+				if (inRequests[i]) return true;
+			}
+			return false;
+		}
+		else
+		{
+			return inDefault;
+		}
+	}
+
+	public static bool AnyFalse(List<bool> inRequests, bool inDefault = true)
+	{
+		if (inRequests.Count > 0)
+		{
+			for (int i = 0; i < inRequests.Count; i++)
+			{
+				if (!inRequests[i]) return true;
+			}
+			return false;
+		}
+		else
+		{
+			return inDefault;
+		}
 	}
 }
