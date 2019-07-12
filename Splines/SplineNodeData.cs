@@ -2,10 +2,13 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-[System.Serializable]
-public class SplineNodeData
+namespace Luckshot.Splines
 {
-	public virtual void Lerp(SplineNodeData a, SplineNodeData b, float alpha)
+	[System.Serializable]
+	public class SplineNodeData
 	{
+		public virtual void Lerp(SplineNodeData a, SplineNodeData b, float alpha)
+		{
+		}
 	}
 }

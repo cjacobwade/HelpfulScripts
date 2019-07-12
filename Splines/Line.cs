@@ -1,7 +1,10 @@
 ﻿using UnityEngine;
 
-public class Line : MonoBehaviour
+namespace Luckshot.Splines
 {
-	public Vector3 p0 = Vector3.zero;
-	public Vector3 p1 = Vector3.zero;
+	public class Line : MonoBehaviour
+	{
+		public Vector3 p0 = Vector3.zero;
+		public Vector3 p1 = Vector3.zero;
+	}
 }

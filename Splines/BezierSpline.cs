@@ -2,338 +2,341 @@
 using System;
 using UnityEngine.Serialization;
 
-public class BezierSpline : MonoBehaviour 
+namespace Luckshot.Splines
 {
-	[SerializeField, HideInInspector]
-	Vector3[] _points = null;
-	public Vector3[] GetPoints()
+	public class BezierSpline : MonoBehaviour
 	{
-		if (_points == null || _points.Length == 0)
-			Reset();
-
-		return _points;
-	}
-
-	[SerializeField, HideInInspector]
-	BezierControlPointMode[] _modes = null;
-	protected BezierControlPointMode[] modes
-	{
-		get
+		[SerializeField, HideInInspector]
+		Vector3[] _points = null;
+		public Vector3[] GetPoints()
 		{
-			if (_modes == null || _modes.Length == 0)
+			if (_points == null || _points.Length == 0)
 				Reset();
 
-			return _modes;
+			return _points;
 		}
-	}
 
-	public int ModeCount
-	{ get { return modes.Length; } }
-
-	[SerializeField, HideInInspector]
-	protected bool _loop = false;
-
-	public bool Loop 
-	{
-		get { return _loop; }
-		set 
+		[SerializeField, HideInInspector]
+		BezierControlPointMode[] _modes = null;
+		protected BezierControlPointMode[] modes
 		{
-			_loop = value;
-			if ( value == true ) 
+			get
 			{
-				modes[ modes.Length - 1 ] = modes[ 0 ];
-				SetControlPoint( 0, GetPoints()[ 0 ] );
+				if (_modes == null || _modes.Length == 0)
+					Reset();
+
+				return _modes;
 			}
 		}
-	}
 
-	public int ControlPointCount
-	{
-		get { return GetPoints().Length; }
-	}
+		public int ModeCount
+		{ get { return modes.Length; } }
 
-	public Vector3 GetControlPoint( int index ) 
-	{
-		return GetPoints()[ index ];
-	}
+		[SerializeField, HideInInspector]
+		protected bool _loop = false;
 
-	public void SetControlPoint( int index, Vector3 point )
-	{
-		if (index % 3 == 0) 
+		public bool Loop
 		{
-			Vector3 delta = point - GetPoints()[ index ];
-			if ( _loop )
+			get { return _loop; }
+			set
 			{
-				if ( index == 0 )
+				_loop = value;
+				if (value == true)
 				{
-					GetPoints()[ 1 ] += delta;
-					GetPoints()[ GetPoints().Length - 2 ] += delta;
-					GetPoints()[ GetPoints().Length - 1 ] = point;
+					modes[modes.Length - 1] = modes[0];
+					SetControlPoint(0, GetPoints()[0]);
 				}
-				else if ( index == GetPoints().Length - 1 )
+			}
+		}
+
+		public int ControlPointCount
+		{
+			get { return GetPoints().Length; }
+		}
+
+		public Vector3 GetControlPoint(int index)
+		{
+			return GetPoints()[index];
+		}
+
+		public void SetControlPoint(int index, Vector3 point)
+		{
+			if (index % 3 == 0)
+			{
+				Vector3 delta = point - GetPoints()[index];
+				if (_loop)
 				{
-					GetPoints()[ 0 ] = point;
-					GetPoints()[ 1 ] += delta;
-					GetPoints()[ index - 1 ] += delta;
+					if (index == 0)
+					{
+						GetPoints()[1] += delta;
+						GetPoints()[GetPoints().Length - 2] += delta;
+						GetPoints()[GetPoints().Length - 1] = point;
+					}
+					else if (index == GetPoints().Length - 1)
+					{
+						GetPoints()[0] = point;
+						GetPoints()[1] += delta;
+						GetPoints()[index - 1] += delta;
+					}
+					else
+					{
+						GetPoints()[index - 1] += delta;
+						GetPoints()[index + 1] += delta;
+					}
 				}
-				else 
+				else
 				{
-					GetPoints()[ index - 1 ] += delta;
-					GetPoints()[ index + 1 ] += delta;
+					if (index > 0)
+					{
+						GetPoints()[index - 1] += delta;
+					}
+					if (index + 1 < GetPoints().Length)
+					{
+						GetPoints()[index + 1] += delta;
+					}
+				}
+			}
+
+			GetPoints()[index] = point;
+			EnforceMode(index);
+		}
+
+		public BezierControlPointMode GetControlPointMode(int index)
+		{
+			return modes[(index + 1) / 3];
+		}
+
+		public void SetControlPointMode(int index, BezierControlPointMode mode)
+		{
+			int modeIndex = (index + 1) / 3;
+			modes[modeIndex] = mode;
+			if (_loop)
+			{
+				if (modeIndex == 0)
+				{
+					modes[modes.Length - 1] = mode;
+				}
+				else if (modeIndex == modes.Length - 1)
+				{
+					modes[0] = mode;
+				}
+			}
+
+			EnforceMode(index);
+		}
+
+		private void EnforceMode(int index)
+		{
+			int modeIndex = (index + 1) / 3; // What the hell is this doing? Every xth point has a specific control mode
+			BezierControlPointMode mode = modes[modeIndex];
+			if (mode == BezierControlPointMode.Free || !_loop && (modeIndex == 0 || modeIndex == modes.Length - 1))
+			{
+				return;
+			}
+
+			int middleIndex = modeIndex * 3;
+			int fixedIndex, enforcedIndex;
+			if (index <= middleIndex)
+			{
+				fixedIndex = middleIndex - 1;
+				if (fixedIndex < 0)
+				{
+					fixedIndex = GetPoints().Length - 2;
+				}
+				enforcedIndex = middleIndex + 1;
+				if (enforcedIndex >= GetPoints().Length)
+				{
+					enforcedIndex = 1;
 				}
 			}
 			else
 			{
-				if (index > 0)
+				fixedIndex = middleIndex + 1;
+				if (fixedIndex >= GetPoints().Length)
 				{
-					GetPoints()[ index - 1 ] += delta;
+					fixedIndex = 1;
 				}
-				if ( index + 1 < GetPoints().Length )
+				enforcedIndex = middleIndex - 1;
+				if (enforcedIndex < 0)
 				{
-					GetPoints()[ index + 1 ] += delta;
+					enforcedIndex = GetPoints().Length - 2;
 				}
 			}
-		}
 
-		GetPoints()[ index ] = point;
-		EnforceMode( index );
-	}
-
-	public BezierControlPointMode GetControlPointMode( int index ) 
-	{
-		return modes[ ( index + 1 ) / 3 ];
-	}
-
-	public void SetControlPointMode ( int index, BezierControlPointMode mode )
-	{
-		int modeIndex = ( index + 1 ) / 3;
-		modes[ modeIndex ] = mode;
-		if ( _loop )
-		{
-			if ( modeIndex == 0 )
+			Vector3 middle = GetPoints()[middleIndex];
+			Vector3 enforcedTangent = middle - GetPoints()[fixedIndex];
+			if (mode == BezierControlPointMode.Aligned)
 			{
-				modes[ modes.Length - 1 ] = mode;
+				enforcedTangent = enforcedTangent.normalized * Vector3.Distance(middle, GetPoints()[enforcedIndex]);
 			}
-			else if ( modeIndex == modes.Length - 1 )
+			GetPoints()[enforcedIndex] = middle + enforcedTangent;
+		}
+
+		public int CurveCount
+		{
+			get { return (GetPoints().Length - 1) / 3; }
+		}
+
+		public Vector3 GetPoint(float t)
+		{
+			if (GetPoints().Length < 4)
+				return Vector3.zero;
+
+			int i;
+			if (t >= 1f)
 			{
-				modes[ 0 ] = mode;
+				t = 1f;
+				i = GetPoints().Length - 4;
 			}
-		}
-
-		EnforceMode( index );
-	}
-
-	private void EnforceMode ( int index )
-	{
-		int modeIndex = ( index + 1 ) / 3; // What the hell is this doing? Every xth point has a specific control mode
-		BezierControlPointMode mode = modes[ modeIndex ];
-		if ( mode == BezierControlPointMode.Free || !_loop && ( modeIndex == 0 || modeIndex == modes.Length - 1 ) )
-		{
-			return;
-		}
-
-		int middleIndex = modeIndex * 3;
-		int fixedIndex, enforcedIndex;
-		if ( index <= middleIndex )
-		{
-			fixedIndex = middleIndex - 1;
-			if ( fixedIndex < 0 )
+			else
 			{
-				fixedIndex = GetPoints().Length - 2;
+				t = Mathf.Clamp01(t) * CurveCount;
+				i = (int)t;
+				t -= i;
+				i *= 3;
 			}
-			enforcedIndex = middleIndex + 1;
-			if ( enforcedIndex >= GetPoints().Length )
+			return transform.TransformPoint(Bezier.GetPoint(GetPoints()[i], GetPoints()[i + 1], GetPoints()[i + 2], GetPoints()[i + 3], t));
+		}
+
+		public float GetNearestAlpha(Vector3 point, int iterations = 10)
+		{
+			int nearestIter = 0;
+			float nearestAlpha = 0f;
+			float nearestDistance = float.MaxValue;
+
+			// Get a general spot along the spline that our point is near
+			// This is more accurate then immediately halfing
+			int totalIterations = iterations * ControlPointCount;
+			for (int i = 0; i < totalIterations; i++)
 			{
-				enforcedIndex = 1;
+				float iterAlpha = i / (float)totalIterations;
+
+				Vector3 iterPos = GetPoint(iterAlpha);
+				float iterDistance = Vector3.Distance(point, iterPos);
+
+				if (iterDistance < nearestDistance)
+				{
+					nearestIter = i;
+					nearestAlpha = iterAlpha;
+					nearestDistance = iterDistance;
+				}
 			}
-		}
-		else
-		{
-			fixedIndex = middleIndex + 1;
-			if ( fixedIndex >= GetPoints().Length )
+
+			// Within a range around closest large iteration,
+			// keep halving range till we have a good approximation
+			float minIterAlpha = Mathf.Max(0, nearestIter - 1) / (float)totalIterations;
+			float maxIterAlpha = Mathf.Min(totalIterations, nearestIter + 1) / (float)totalIterations;
+			for (int i = 0; i < totalIterations; i++)
 			{
-				fixedIndex = 1;
+				float iterAlpha = Mathf.Lerp(minIterAlpha, maxIterAlpha, i / (float)totalIterations);
+
+				Vector3 iterPos = GetPoint(iterAlpha);
+				float iterDistance = Vector3.Distance(point, iterPos);
+
+				if (iterDistance < nearestDistance)
+				{
+					nearestAlpha = iterAlpha;
+					nearestDistance = iterDistance;
+				}
 			}
-			enforcedIndex = middleIndex - 1;
-			if ( enforcedIndex < 0 )
+
+			return nearestAlpha;
+		}
+
+		public Vector3 GetNearestSplinePoint(Vector3 position, int numIterations = 10)
+		{ return GetPoint(GetNearestAlpha(position, numIterations)); }
+
+		public Vector3 GetVelocity(float t)
+		{
+			int i;
+			if (t >= 1f)
 			{
-				enforcedIndex = GetPoints().Length - 2;
+				t = 1f;
+				i = GetPoints().Length - 4;
 			}
-		}
-
-		Vector3 middle = GetPoints()[ middleIndex ];
-		Vector3 enforcedTangent = middle - GetPoints()[ fixedIndex ];
-		if ( mode == BezierControlPointMode.Aligned )
-		{
-			enforcedTangent = enforcedTangent.normalized * Vector3.Distance( middle, GetPoints()[ enforcedIndex ] );
-		}
-		GetPoints()[ enforcedIndex ] = middle + enforcedTangent;
-	}
-
-	public int CurveCount
-	{
-		get { return (GetPoints().Length - 1) / 3; }
-	}
-
-	public Vector3 GetPoint ( float t )
-	{
-		if (GetPoints().Length < 4)
-			return Vector3.zero;
-
-		int i;
-		if ( t >= 1f )
-		{
-			t = 1f;
-			i = GetPoints().Length - 4;
-		}
-		else
-		{
-			t = Mathf.Clamp01( t ) * CurveCount;
-			i = (int)t;
-			t -= i;
-			i *= 3;
-		}
-		return transform.TransformPoint( Bezier.GetPoint( GetPoints()[ i ], GetPoints()[ i + 1 ], GetPoints()[ i + 2 ], GetPoints()[ i + 3 ], t ) );
-	}
-
-	public float GetNearestAlpha(Vector3 point, int iterations = 10)
-	{
-		int nearestIter = 0;
-		float nearestAlpha = 0f;
-		float nearestDistance = float.MaxValue;
-
-		// Get a general spot along the spline that our point is near
-		// This is more accurate then immediately halfing
-		int totalIterations = iterations * ControlPointCount;
-		for (int i = 0; i < totalIterations; i++)
-		{
-			float iterAlpha = i / (float)totalIterations;
-
-			Vector3 iterPos = GetPoint(iterAlpha);
-			float iterDistance = Vector3.Distance(point, iterPos);
-
-			if (iterDistance < nearestDistance)
+			else
 			{
-				nearestIter = i;
-				nearestAlpha = iterAlpha;
-				nearestDistance = iterDistance;
+				t = Mathf.Clamp01(t) * CurveCount;
+				i = (int)t;
+				t -= i;
+				i *= 3;
 			}
+
+			return transform.TransformPoint(Bezier.GetFirstDerivative(GetPoints()[i], GetPoints()[i + 1], GetPoints()[i + 2], GetPoints()[i + 3], t)) - transform.position;
 		}
 
-		// Within a range around closest large iteration,
-		// keep halving range till we have a good approximation
-		float minIterAlpha = Mathf.Max(0, nearestIter - 1) / (float)totalIterations;
-		float maxIterAlpha = Mathf.Min(totalIterations, nearestIter + 1) / (float)totalIterations;
-		for(int i = 0; i < totalIterations; i++)
+		public Vector3 GetDirection(float t)
 		{
-			float iterAlpha = Mathf.Lerp(minIterAlpha, maxIterAlpha, i / (float)totalIterations);
+			return GetVelocity(t).normalized;
+		}
 
-			Vector3 iterPos = GetPoint(iterAlpha);
-			float iterDistance = Vector3.Distance(point, iterPos);
+		public virtual void AddCurve()
+		{
+			Vector3 point = GetPoints()[GetPoints().Length - 1];
+			Array.Resize(ref _points, GetPoints().Length + 3);
+			point.x += 1f;
+			GetPoints()[GetPoints().Length - 3] = point;
+			point.x += 1f;
+			GetPoints()[GetPoints().Length - 2] = point;
+			point.x += 1f;
+			GetPoints()[GetPoints().Length - 1] = point;
 
-			if (iterDistance < nearestDistance)
+			Array.Resize(ref _modes, modes.Length + 1);
+			modes[modes.Length - 1] = BezierControlPointMode.Aligned;
+			EnforceMode(GetPoints().Length - 4);
+
+			if (_loop)
 			{
-				nearestAlpha = iterAlpha;
-				nearestDistance = iterDistance;
+				GetPoints()[GetPoints().Length - 1] = GetPoints()[0];
+				modes[modes.Length - 1] = modes[0];
+				EnforceMode(0);
 			}
 		}
 
-		return nearestAlpha;
-	}
+		public virtual void RemoveCurve()
+		{
+			Array.Resize(ref _points, GetPoints().Length - 3);
+			Array.Resize(ref _modes, modes.Length - 1);
 
-	public Vector3 GetNearestSplinePoint(Vector3 position, int numIterations = 10)
-	{ return GetPoint(GetNearestAlpha(position, numIterations)); }
-	
-	public Vector3 GetVelocity ( float t )
-	{
-		int i;
-		if ( t >= 1f )
-		{
-			t = 1f;
-			i = GetPoints().Length - 4;
-		}
-		else
-		{
-			t = Mathf.Clamp01( t ) * CurveCount;
-			i = (int)t;
-			t -= i;
-			i *= 3;
+			if (_loop)
+			{
+				GetPoints()[GetPoints().Length - 1] = GetPoints()[0];
+				modes[modes.Length - 1] = modes[0];
+				EnforceMode(0);
+			}
 		}
 
-		return transform.TransformPoint( Bezier.GetFirstDerivative( GetPoints()[ i ], GetPoints()[ i + 1 ], GetPoints()[ i + 2 ], GetPoints()[ i + 3 ], t ) ) - transform.position;
-	}
-	
-	public Vector3 GetDirection ( float t ) 
-	{
-		return GetVelocity( t ).normalized;
-	}
-
-	public virtual void AddCurve () 
-	{
-		Vector3 point = GetPoints()[ GetPoints().Length - 1 ];
-		Array.Resize( ref _points, GetPoints().Length + 3 );
-		point.x += 1f;
-		GetPoints()[ GetPoints().Length - 3 ] = point;
-		point.x += 1f;
-		GetPoints()[ GetPoints().Length - 2 ] = point;
-		point.x += 1f;
-		GetPoints()[ GetPoints().Length - 1 ] = point;
-
-		Array.Resize( ref _modes, modes.Length + 1 );
-		modes[ modes.Length - 1 ] = BezierControlPointMode.Aligned;
-		EnforceMode( GetPoints().Length - 4 );
-
-		if ( _loop )
+		public virtual void Reset()
 		{
-			GetPoints()[ GetPoints().Length - 1 ] = GetPoints()[ 0 ];
-			modes[ modes.Length - 1 ] = modes[ 0 ];
-			EnforceMode( 0 );
-		}
-	}
-
-	public virtual void RemoveCurve()
-	{
-		Array.Resize( ref _points, GetPoints().Length - 3 );
-		Array.Resize( ref _modes, modes.Length - 1 );
-
-		if ( _loop )
-		{
-			GetPoints()[ GetPoints().Length - 1 ] = GetPoints()[ 0 ];
-			modes[ modes.Length - 1 ] = modes[ 0 ];
-			EnforceMode( 0 );
-		}
-	}
-	
-	public virtual void Reset () 
-	{
-		_points = new Vector3[] 
-		{
+			_points = new Vector3[]
+			{
 			new Vector3(1f, 0f, 0f),
 			new Vector3(2f, 0f, 0f),
 			new Vector3(3f, 0f, 0f),
 			new Vector3(4f, 0f, 0f)
-		};
+			};
 
-		_modes = new BezierControlPointMode[] 
-		{
+			_modes = new BezierControlPointMode[]
+			{
 			BezierControlPointMode.Free,
 			BezierControlPointMode.Free
-		};
-	}
+			};
+		}
 
-	protected virtual void OnDrawGizmosSelected()
-	{
-		Gizmos.color = Color.green;
-		Gizmos.DrawSphere(GetPoint(0f), 0.3f);
-
-		Gizmos.color = Color.red;
-		Gizmos.DrawSphere(GetPoint(1f), 0.3f);
-
-		int numIterations = 10 * ControlPointCount;
-		for(int i = 1; i < numIterations; i++)
+		protected virtual void OnDrawGizmosSelected()
 		{
-			Gizmos.color = Color.Lerp(Color.green, Color.red, i / (float)numIterations);
-			Gizmos.DrawLine(GetPoint(i / (float)numIterations), GetPoint((i - 1) / (float)numIterations));
+			Gizmos.color = Color.green;
+			Gizmos.DrawSphere(GetPoint(0f), 0.3f);
+
+			Gizmos.color = Color.red;
+			Gizmos.DrawSphere(GetPoint(1f), 0.3f);
+
+			int numIterations = 10 * ControlPointCount;
+			for (int i = 1; i < numIterations; i++)
+			{
+				Gizmos.color = Color.Lerp(Color.green, Color.red, i / (float)numIterations);
+				Gizmos.DrawLine(GetPoint(i / (float)numIterations), GetPoint((i - 1) / (float)numIterations));
+			}
 		}
 	}
 }

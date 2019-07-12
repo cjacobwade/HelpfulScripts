@@ -2,24 +2,27 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class ExampleAdvSpline : AdvSpline<ExampleSplineNodeData>
+namespace Luckshot.Splines
 {
-	[SerializeField]
-	float _testAlpha = 0f;
-
-	ExampleSplineNodeData _interpData = new ExampleSplineNodeData();
-
-	protected override void OnDrawGizmosSelected()
+	public class ExampleAdvSpline : AdvSpline<ExampleSplineNodeData>
 	{
-		base.OnDrawGizmosSelected();
+		[SerializeField]
+		float _testAlpha = 0f;
 
-		float repeatAlpha = Mathf.Repeat(_testAlpha, 1f);
+		ExampleSplineNodeData _interpData = new ExampleSplineNodeData();
 
-		InterpNodeData(_interpData, repeatAlpha);
+		protected override void OnDrawGizmosSelected()
+		{
+			base.OnDrawGizmosSelected();
 
-		Vector3 point = GetPoint(repeatAlpha);
+			float repeatAlpha = Mathf.Repeat(_testAlpha, 1f);
 
-		Gizmos.DrawSphere(point, _interpData.size);
-		Gizmos.DrawLine(point, point + _interpData.lookDirection);
+			InterpNodeData(_interpData, repeatAlpha);
+
+			Vector3 point = GetPoint(repeatAlpha);
+
+			Gizmos.DrawSphere(point, _interpData.size);
+			Gizmos.DrawLine(point, point + _interpData.lookDirection);
+		}
 	}
 }

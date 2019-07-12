@@ -1,6 +1,9 @@
-﻿public enum BezierControlPointMode
+﻿namespace Luckshot.Splines
 {
-	Free = 0,
-	Aligned,
-	Mirrored
+	public enum BezierControlPointMode
+	{
+		Free = 0,
+		Aligned,
+		Mirrored
+	}
 }
