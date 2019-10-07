@@ -28,7 +28,7 @@ public class Vibration
 		rightStrength = inOtherVibration.rightStrength;
 	}
 
-	public Vibration(InputDevice inInputDevice, float inTime, float inLeftStrength, float inRightStrength)
+	public Vibration(InputDevice inInputDevice, float inLeftStrength, float inRightStrength, float inTime)
 	{
 		inputDevice = inInputDevice;
 		time = inTime;
