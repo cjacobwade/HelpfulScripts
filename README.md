@@ -1,7 +1,7 @@
 HelpfulScripts
 ==============
 
-A collection of random, useful scripts
+A collection of random, useful scripts. Please check the date these scripts were made before using them in your project! If they're more than 1-2 years old they may not work with your version of Unity- if you run into that let me know and I'll deprecate them.
 
 LICENSE MIT
 
